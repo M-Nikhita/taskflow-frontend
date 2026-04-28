@@ -9,14 +9,18 @@ const Login = () => {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(''); // inline error message
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setError(''); // clear error on new input
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.email.trim()) { toast.error('Email is required'); return; }
-    if (!/\S+@\S+\.\S+/.test(form.email)) { toast.error('Enter a valid email address'); return; }
-    if (!form.password) { toast.error('Password is required'); return; }
+  const handleSubmit = async () => {
+    setError('');
+    if (!form.email.trim())               { setError('Email is required'); return; }
+    if (!/\S+@\S+\.\S+/.test(form.email)) { setError('Enter a valid email address'); return; }
+    if (!form.password)                   { setError('Password is required'); return; }
 
     setLoading(true);
     try {
@@ -28,17 +32,22 @@ const Login = () => {
       const status = err.response?.status;
       const msg    = err.response?.data?.message;
       if (status === 401 || msg === 'Invalid email or password') {
-        toast.error('Incorrect email or password');
+        setError('Incorrect email or password. Please try again.');
       } else if (status === 429) {
-        toast.error('Too many attempts. Please wait 15 minutes.');
+        setError('Too many attempts. Please wait 15 minutes.');
       } else if (err.code === 'ERR_NETWORK') {
-        toast.error('Cannot reach server — please try again');
+        setError('Cannot reach server. Please try again.');
       } else {
-        toast.error(msg || 'Login failed. Please try again');
+        setError(msg || 'Login failed. Please try again.');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Allow submitting with Enter key
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSubmit();
   };
 
   return (
@@ -61,20 +70,32 @@ const Login = () => {
 
         {/* Card */}
         <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-8 backdrop-blur-sm shadow-2xl">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+          {/* Inline error banner — shown instead of toast so it's never hidden */}
+          {error && (
+            <div className="mb-4 flex items-center gap-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm rounded-lg px-4 py-3">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
               <input
                 id="login-email"
                 name="email"
                 type="email"
-                autoComplete="email"
+                autoComplete="username"
                 placeholder="john@example.com"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full bg-slate-900/60 border border-slate-600 text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                onKeyDown={handleKeyDown}
+                className={`w-full bg-slate-900/60 border text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500
+                  ${error ? 'border-rose-500 focus:border-rose-500' : 'border-slate-600 focus:border-indigo-500'}`}
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
               <input
@@ -85,13 +106,16 @@ const Login = () => {
                 placeholder="Your password"
                 value={form.password}
                 onChange={handleChange}
-                className="w-full bg-slate-900/60 border border-slate-600 text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                onKeyDown={handleKeyDown}
+                className={`w-full bg-slate-900/60 border text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500
+                  ${error ? 'border-rose-500 focus:border-rose-500' : 'border-slate-600 focus:border-indigo-500'}`}
               />
             </div>
 
             <button
               id="login-submit-btn"
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={loading}
               className="mt-2 w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 text-white font-semibold text-sm rounded-lg shadow-lg shadow-indigo-900/40 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
@@ -99,7 +123,7 @@ const Login = () => {
                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : 'Sign In'}
             </button>
-          </form>
+          </div>
 
           <p className="text-center text-slate-400 text-sm mt-6">
             Don&apos;t have an account?{' '}

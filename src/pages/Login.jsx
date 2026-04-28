@@ -7,24 +7,24 @@ import { useAuth } from '../context/AuthContext';
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(''); // inline error message
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
 
-  const handleChange = (e) => {
-    setError(''); // clear error on new input
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  // Only clear error when the user actively types (not autofill)
+  const onEmailChange    = (e) => { setError(''); setEmail(e.target.value); };
+  const onPasswordChange = (e) => { setError(''); setPassword(e.target.value); };
 
   const handleSubmit = async () => {
     setError('');
-    if (!form.email.trim())               { setError('Email is required'); return; }
-    if (!/\S+@\S+\.\S+/.test(form.email)) { setError('Enter a valid email address'); return; }
-    if (!form.password)                   { setError('Password is required'); return; }
+    if (!email.trim())               { setError('Email is required'); return; }
+    if (!/\S+@\S+\.\S+/.test(email)) { setError('Enter a valid email address'); return; }
+    if (!password)                   { setError('Password is required'); return; }
 
     setLoading(true);
     try {
-      const { data } = await api.post('/api/auth/login', form);
+      const { data } = await api.post('/api/auth/login', { email, password });
       login(data.token, data.user);
       toast.success(`Welcome back, ${data.user.name}!`);
       navigate('/dashboard');
@@ -45,14 +45,10 @@ const Login = () => {
     }
   };
 
-  // Allow submitting with Enter key
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSubmit();
-  };
+  const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit(); };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-slate-900">
-      {/* Background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative w-full max-w-md">
@@ -71,44 +67,47 @@ const Login = () => {
         {/* Card */}
         <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-8 backdrop-blur-sm shadow-2xl">
 
-          {/* Inline error banner — shown instead of toast so it's never hidden */}
+          {/* Inline error banner */}
           {error && (
-            <div className="mb-4 flex items-center gap-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm rounded-lg px-4 py-3">
-              <span>⚠️</span>
+            <div className="mb-4 flex items-start gap-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm rounded-lg px-4 py-3">
+              <span className="mt-0.5">⚠️</span>
               <span>{error}</span>
             </div>
           )}
 
           <div className="flex flex-col gap-4">
+
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
               <input
                 id="login-email"
-                name="email"
                 type="email"
                 autoComplete="username"
                 placeholder="john@example.com"
-                value={form.email}
-                onChange={handleChange}
+                value={email}
+                onChange={onEmailChange}
                 onKeyDown={handleKeyDown}
-                className={`w-full bg-slate-900/60 border text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500
-                  ${error ? 'border-rose-500 focus:border-rose-500' : 'border-slate-600 focus:border-indigo-500'}`}
+                className={`w-full bg-slate-900/60 border text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1
+                  ${error ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-600 focus:border-indigo-500 focus:ring-indigo-500'}`}
               />
             </div>
 
+            {/* Password — no name/autoComplete so browser won't offer to save on failed logins */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
               <input
                 id="login-password"
-                name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
                 placeholder="Your password"
-                value={form.password}
-                onChange={handleChange}
+                value={password}
+                onChange={onPasswordChange}
                 onKeyDown={handleKeyDown}
-                className={`w-full bg-slate-900/60 border text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500
-                  ${error ? 'border-rose-500 focus:border-rose-500' : 'border-slate-600 focus:border-indigo-500'}`}
+                className={`w-full bg-slate-900/60 border text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1
+                  ${error ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-600 focus:border-indigo-500 focus:ring-indigo-500'}`}
               />
             </div>
 

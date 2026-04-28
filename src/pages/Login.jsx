@@ -14,10 +14,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.email || !form.password) {
-      toast.error('Email and password are required');
-      return;
-    }
+    if (!form.email.trim()) { toast.error('Email is required'); return; }
+    if (!/\S+@\S+\.\S+/.test(form.email)) { toast.error('Enter a valid email address'); return; }
+    if (!form.password) { toast.error('Password is required'); return; }
+
     setLoading(true);
     try {
       const { data } = await api.post('/api/auth/login', form);
@@ -25,7 +25,17 @@ const Login = () => {
       toast.success(`Welcome back, ${data.user.name}!`);
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Cannot reach server — is the backend running?' : 'Login failed'));
+      const status = err.response?.status;
+      const msg    = err.response?.data?.message;
+      if (status === 401 || msg === 'Invalid email or password') {
+        toast.error('Incorrect email or password');
+      } else if (status === 429) {
+        toast.error('Too many attempts. Please wait 15 minutes.');
+      } else if (err.code === 'ERR_NETWORK') {
+        toast.error('Cannot reach server — please try again');
+      } else {
+        toast.error(msg || 'Login failed. Please try again');
+      }
     } finally {
       setLoading(false);
     }

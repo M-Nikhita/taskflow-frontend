@@ -12,9 +12,9 @@ const Login = () => {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
-  // Only clear error when the user actively types (not autofill)
-  const onEmailChange    = (e) => { setError(''); setEmail(e.target.value); };
-  const onPasswordChange = (e) => { setError(''); setPassword(e.target.value); };
+  // Do NOT clear error on change — autofill also fires onChange and would wipe the error
+  const onEmailChange    = (e) => setEmail(e.target.value);
+  const onPasswordChange = (e) => setPassword(e.target.value);
 
   const handleSubmit = async () => {
     setError('');
@@ -31,6 +31,8 @@ const Login = () => {
     } catch (err) {
       const status = err.response?.status;
       const msg    = err.response?.data?.message;
+      // Clear password so Chrome has no credentials to offer to save
+      setPassword('');
       if (status === 401 || msg === 'Invalid email or password') {
         setError('Incorrect email or password. Please try again.');
       } else if (status === 429) {
